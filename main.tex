@@ -1,0 +1,82 @@
+\documentclass{gatech-thesis}
+% The default options:
+%   \documentclass[11pt,letterpaper,oneside,%
+%       doublespaced,normalmargins,final]{gatech-thesis}
+% will generate a document that conforms to the graduate studies office
+% guidelines.
+ \ifx\pdfoutput\undefined
+   \usepackage[dvips,final]{graphicx}  % using latex+dvips
+   \usepackage[dvips,usenames]{color}
+   \else
+   \usepackage[pdftex,final]{graphicx} % using pdflatex
+   \usepackage[pdftex,usenames]{color}
+ \fi
+ \usepackage{epstopdf}
+ \usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsbsy}
+\usepackage{wrapfig}
+\usepackage{changebar}
+\usepackage{xcolor}
+\usepackage{rotating}
+\usepackage[ruled,linesnumbered,vlined]{algorithm2e}
+\usepackage[normalem]{ulem}
+\DeclareMathOperator{\sgn}{sgn}
+\input{defs}
+%define stuff in preamble
+ \degree{Doctor of Philosophy}
+ \department{College of Computing}
+ \title{Locomotion Synthesis in Complex Physically Simulated Environments}
+ \author{Jie Tan}
+ \principaladvisor{Karen Liu}
+ \principaladvisors{Greg Turk}
+% \committeechair{Greg Turk}
+ \firstreader{Jarek Rossignac}
+ \secondreader{Frank Dellaert}
+ \thirdreader{James O'Brien}[Department of Electrical Engineering and Computer Science][University of California at Berkeley]
+ \submitdate{December 2015}
+ \approveddate{October 23, 2015}
+ \copyrightyear{2015} %add one if thesis submitted in Dec.
+
+% \thesisproposalfalse       % default
+% \titlepagetrue             % default
+% \signaturepagetrue         % default
+ \copyrighttrue            % default
+% \figurespagetrue           % default
+% \tablespagetrue            % default
+% \contentspagetrue          % default
+% \dedicationheadingfalse    % default
+% \bibpagetrue               % default
+% \strictmarginstrue         % default
+
+\bibfiles{avc-bib}
+
+\begin{document}
+\bibliographystyle{gatech-thesis}
+\setchaptertocdepth{2}
+%
+\begin{preliminary}
+\begin{acknowledgements}
+\input{avc-ack}
+\end{acknowledgements}
+%
+\contents
+%
+\begin{summary}
+\input{avc-summary}
+\end{summary}
+\end{preliminary}
+%
+\input{avc-intro}
+\input{avc-related}
+\input{avc-swimming}
+\input{avc-softbody}
+\input{avc-bicycle}
+\input{avc-robot}
+\input{avc-conclusion}
+\appendix
+\input{avc-appendix}
+\begin{postliminary}
+\references
+\end{postliminary}
+\end{document}
