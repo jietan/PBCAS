@@ -1,9 +1,11 @@
 \section{Physical Simulation}
-In most of physically-based character animation systems, human characters are represented as an articulated rigid body system, a group of rigid bodies chained together through joints. Note that this is a drastic simplification since simulating each bone, muscle and tendon that a real human has would require a prohibitively huge amount of computational resources. There are two major methods to simulate the dynamics of an articulated rigid body system. It can be simulated in maximal coordinates (Cartesian space) or in generalized coordinates (joint space).
+In most of physically-based character animation systems, human characters are represented as an articulated rigid body system, a group of rigid bodies chained together through joints. Note that this is a drastic simplification since simulating each bone, muscle and tendon that a real human has would require a prohibitively huge amount of computational resources. The articulated figure is represented as a tree structure \ref{}. Each node is a rigid body and each edge is a joint. Each node can have multiple children but at most one parent. The root node has no parent. Note that in this tree representation, loop is not allowed. Although it is possible to simulate loops, such case is rare in character animation and will not discussed here. There are two major methods to simulate the dynamics of an articulated rigid body system. It can be simulated in maximal coordinates (Cartesian space) or in generalized coordinates (joint space).
+
+
 
 \subsection{Simulation in maximal coordinates}
 
-When simulating in  maximal coordinates, each body of the articulated figure has six degrees of freedom: three translational and three rotational. The dynamics of each rigid body is considered independently. A list of additional joint constraints are imposed to ensure that the two adjacent bodies will stick together at the joint location. The dynamics equation for each body is 
+In maximal coordinates, the physical states of the articulated figures are defined for each node (rigid body). Each body has six degrees of freedom: three translational and three rotational. The dynamics of each rigid body is considered independently. A list of additional joint constraints are imposed to ensure that the two adjacent bodies will stick together at the joint location. The dynamics equation for each body is 
 
 \begin{equation}
 \left[\begin{array}{cc}
@@ -58,10 +60,31 @@ To allow a character to actively control its motion, actuators are attached to t
 \end{equation}
 where $\boldsymbol{\tau}_A$ and $\boldsymbol{\tau}_B$ are the torques exerted by the actuator to body $A$ and $B$ respectively.
 
-Although simple to understand and implement, simulating characters in maximal coordinates is not the most popular method due to a few drawbacks. First, the state representation in  maximal coordinates is redundant. It is not efficient to use all six degrees of freedom a rigid body and then eliminate many of them using joint constraints. Second, the accumulating numerical errors in simulation would cause the joint constraints not satisfied exactly. Eventually, joints will dislocate and adjacent bodies will drift apart. Both of these shorting comings are overcome by simulation in joint space.
+Although simple to understand and implement, simulating characters in maximal coordinates is not the most popular method due to a few drawbacks. First, the state representation in  maximal coordinates is redundant. It is not efficient to use all six degrees of freedom a rigid body and then eliminate most of them using joint constraints. Second, the accumulating numerical errors in simulation would cause the joint constraints not satisfied exactly. Eventually, joints will dislocate and adjacent bodies will drift apart. Both of these shorting comings are overcome by simulation in generalized coordinates.
 
-\subsection{Simulation in generalized coordinates} 
+\subsection{Simulation in generalized coordinates}
+In generalized coordinates, the physical states $\vc{q}$ of the articulated figure are defined on the edges of the tree (joints). The root node is attached to the world space via a 6-dof free joint. It can translate and rotate freely. Other nodes can be attached to their parents through a 3-dof ball joint, 2-dof universal joint, 1-dof hinge joint or 0-dof fix joint. Each degree of freedom contributes one component of $\vc{q}$. The number of DOF's equals the dimensionality of $\vc{q}$. In other words, there is no redundancy in this representation.
 
+The dynamics equation in generalized coordinates for an articulated rigid body system is:
+\begin{equation}
+  \vc{M}(\vc{q})\vc{\ddot{q}}+\vc{C(q,\dot{q})}=\vc{J}^T\vc{f}+\boldsymbol{\tau}
+\end{equation}
+where $\vc{q}$, $\vc{\dot{q}}$ and $\vc{\ddot{q}}$ are the position, velocity and acceleration in generalized coordinates. $\vc{M}$ is the mass matrix. $\vc{C(q,\dot{q})}$ accounts for the Coriolis and centrifual force. $\vc{J}$ is the Jacobian matrix. $\vc{f}$ is the external force in Cartesian space, such as gravity and contact force. $\boldsymbol{\tau}$ is the generalized force, including the actuator torques. This equation is derived from Lagrangian dynamics. Detailed derivation can be found in Liu and Jain \cite{}.
+
+When the articulated rigid bodies are simulated in generalized coordinates, it is often necessary to convert physical quantities back and forth between generalized and maximal coordinates. For example, we need to compute the velocity at certain point on the articulated figure in Cartesian space to collision detection. We also need to convert the forces from the Cartesian space to generalized coordinates to apply contact forces. The conversion is through the Jacobian matrix $\vc{J}$.
+\begin{equation}
+\vc{J}=\frac{\partial \vc{x}}{\partial \vc{q}}
+\end{equation}
+Jacobian matrix bridges the two different coordinate system. It represents the relation how much a point $\vc{x}$ moves in the Cartesian space if the joint angles $\vc{q}$ changes slightly. Here are two most frequently-used formulas that transfer velocities and forces:
+\begin{displaymath}
+  \begin{array}{lll}
+    \vc{v} & = & \vc{J}\vc{\dot{q}}\\
+    \boldsymbol{\tau} & = &\vc{J}^T\vc{f}
+   \end{array}
+\end{displaymath}
+More conversion formulas can be found in Liu and Jain \cite{}.
+
+Simulation in generalized coordinates is commonly used in physically-based character animation. Although it takes more effort to walk through the derivation, it has important advantages over simulation in maximal coordinates. Apparently, the representation is more compact. There is no redundancy and thus no need to use constraints to eliminate redundant states. More importantly, this compactness ensures that the joints are preserved exactly: the two bodies that are chained together cannot drift apart due to accumulation of numerical errors. This is because state of dislocated bodies are not representable in generalized coordinates.
 
 \subsection{Contact modeling}
 
