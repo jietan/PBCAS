@@ -1,8 +1,73 @@
 \section{Motion Control}
-Humans and animals can effortlessly control their muscles in to achieve coordinated and purposeful motions, ranging from simple locomotion, dextrous hand manipulation, to highly skillful stunts. To model these motions in animation, simulating the passive dynamics is not enough. The key challenge that motion control tackles is that given a high level description of a motion task (e.g. walk at 5 m/s, grasp a bottle and open the cap, etc.), how much torques should be applied at each joint to successfully achieve the task while still keeps the overall motion natural and realistic. Motion control is the most extensively researched topic in physically-based character animation. The most commonly used technique is optimization. It searches for a controller to minimize an objective function subject to physical constraints. A controller is the character's ``algorithmic brain'' that decides how much joint torques ($\boldsymbol{\tau}$ in eq. \ref{} and \ref{}) are needed at different situations. A controller can be either \emph{feedforward}, \emph{feedback} or their combination. A feedforward (open-loop) controller is a trajectory of pre-computed joint toques, which does not rely on the current states. In contrast, a feedback (close-loop) controller computes the joint torques based on the current states. Most of the motions of humans and animals requires both feedforward and feedback control. For example, our walking gait roughly follows a predefined trajectory (feedforward) but we still need to constantly monitor and control our balance (feedback) based on the road condition, the walking speed and other possible perturbations. The objective function in the optimization is often hand crafted to achieve a high-level task and and to minimize energy expenditure. The constraints usually consist of dynamics equations, joint limits, torque limits, and other task-related requirements. In this section, we will discuss three established methods of motion control: space-time constraints, optimal control and reinforcement learning.
+Humans and animals can effortlessly control their muscles in to achieve coordinated and purposeful motions, ranging from simple locomotion, dextrous hand manipulation, to highly skillful stunts. To model these motions in animation, simulating the passive dynamics is not enough. The key challenge that motion control tackles is to find controllers that can achieve high level motion tasks (e.g. walk at 5 m/s, grasp a bottle and open the cap, etc.). In character animation, a controller is the character's ``algorithmic brain'' that decides how much torque ($\boldsymbol{\tau}$ in eq. \ref{} and \ref{}) are needed at each joint to successfully fulfil the task while still keeps the overall motion natural. Motion control is the most extensively researched topic in physically-based character animation. The most commonly used technique is through optimization. In this section, we will discuss two established methods of motion control: trajectory optimization and reinforcement learning.
 
-\subsection{Space Time Constraints}
-\subsection{Optimal Control}
+\subsection{Trajectory Optimization}
+
+Starting from the classical paper ``Spacetime Constraints'', trajectory optimization has become a mainstream technique inphysically-based character animtion. It searches for a controller that minimizes a cost function subject to physical constraints. The optimization has the following general form:
+\begin{equation}
+  \begin{array}{cl}
+    \min_{\vc{x},\vc{u}}&\sum_{t=0}^{N}g(\vc{x}_t,\vc{u}_t)\\
+    \textrm{subject to}&\\
+    &\vc{x}_{t+1}=\vc{h}(\vc{x}_t)+\vc{B}_t\vc{u}_t
+  \end{array}
+  \label{eq:trajectoryOptimization}
+\end{equation}
+where $\vc{x}$ is the physical states, $\vc{u}$ is the control, $g$ is the cost function, which is often hand crafted to achieve the high-level task. For example, if the task is to walk at 5 m/s, a possible cost function could be the distance between the current COM of the character and a desired COM position that moves at 5 m/s. The constraint usually consists of the dynamics equations $\vc{h}$. Note that in character animation, the dynamics are usually nonlinear to the state $\vc{x}$ but linear to the control $\vc{u}$ (See eq. \ref{} and \ref{}). In addition, the constraints can also include joint limits, torque limits, and other task-related requirements.
+
+To make it more concrete, we will revisit a simple example of controlling a single particle that is illustrated in the original ``Spacetime Constraints'' paper.
+The task of this particle is to fly from point $\vc{a}$ to point $\vc{b}$ in $T$ second using a time-varying jet force $\vc{f}(t)$. The dynamics of the particle is $m\vc{\ddot{x}}-\vc{f}-m\vc{g}=0$, where $\vc{x}$ is its position, $m$ is its mass and $\vc{g}$ is gravity. The goal of this flight is to minimize the total fuel consumption $\int_0^T|\vc{f}|^2dt$. After discretization along time, the optimization has the following form:
+\begin{displaymath}
+  \begin{array}{cl}
+    \min_{\vc{x},\vc{f}}&\sum_{t=0}^{N}|\vc{f}_t|^2\\
+    \textrm{subject to}&\\
+    &\vc{x}_{t+1}= 2\vc{x}_{t} -\vc{x}_{t-1}+\frac{\Delta t^2}{m}\vc{f}_t+\Delta t^2\vc{g}\\
+    &\vc{x}_0=\vc{a}\\
+    &\vc{x}_N=\vc{b}
+  \end{array}
+  \end{displaymath}
+
+It is not too difficult to extend the above derivations to control a human character. We will need to change the control force $\vc{f}(t)$ to joint torques $\boldsymbol{\tau}(t)$, the physical constraint to the dynamics equation of articulated rigid bodies (eq. \ref{} or \ref{}), and the cost function to the relevant function specific to the task.
+
+There are different options to solve the optimization according to the structure of the problem. Assuming the cost function and the dynamics equations are smooth, Witkin and Kass \cite{} applied a generic nonlinear optimizer, Sequential Quadratic Program (SQP) \cite{}, to solve the problem. It is an iterative optimization technique that solves a sequence of quadratic programs that approximate the original problem. The solution of SQP is an optimal trajectory of state $\vc{x}^*(t)$ and control $\vc{u}^*(t)$, among which $\vc{x}^*(t)$ is the animation of the character for the specified task. Note that this method produces only a \emph{feedforward} (open-loop) controller: a single trajecotry over time. It cannot be generalized to the neighboring regions of the state space. As a result, the controller will fail the task even with a slight disturbance to the motion.
+
+\ignorethis{
+
+  In certain applications of animation, using feedforward controller alone is perfectly fine. However, to combat numerical drift or to recover from unexpected perturbations, a more robust \emph{feedback} (close-loop) controller is needed. It computes the joint torques based on the current states. Most of the motions of real humans require both feedforward and feedback control. For example, our walking gait roughly follows a predefined trajectory (feedforward) but we constantly monitor and control our balance (feedback) based on the road condition, the walking speed and other possible perturbations.
+  
+A simple way to incorporate feedback is to use Proportional-Derivative (PD) control to follow the optimal state trajectory$\vc{\bar{q}}(t), \vc{\dot{q}}(t)$:
+\begin{displaymath}
+  \boldsymbol{\tau}=-\vc{K_p}(\vc{q}-\vc{\bar{q}})-\vc{K_d}\vc{\dot{q}}
+\end{displaymath}
+where $\vc{K_p}$ and $\vc{K_d}$ are the proportional and derivative gains. It applies a spring-like force to correct the deviation from the desired joint trajectory. However, it requires careful manual gain tuning to make it properly work. Small gains result in sloppy tracking while large gains introduce numerical stability issues. Tan et al. \cite{} introduced Stable PD controllers that can greatly improve the numerical stability and alleviate the tedious tunning process.
+}
+
+When the cost function is quadratic and the dynamics equation is linear,
+\begin{equation}
+  \begin{array}{cl}
+    \min_{x,u}&\sum_{t=0}^{N}\vc{x}_t^T\vc{Q}_t\vc{x}_t+\vc{u}_t^T\vc{R}_t\vc{u}_t\\
+    \textrm{subject to}&\\
+    &\vc{x}_{t+1}=\vc{A}_t\vc{x}_t+\vc{B}_t\vc{u}_t
+  \end{array}
+  \label{eq:LQR}
+\end{equation}
+the trajectory optimization is called an LQ problem. This problem can be solved very efficiently by linear-quadratic regulator (LQR). The derivation of LQR can be found in most of optimal control textbooks \cite{}, which we will not repeat here. The solution is a feedback controller $\vc{u}_t=\vc{K}_t\vc{x}_t$. Although the requirement of linear dynamics seems quite restrictive, LQR still plays an important role in physically based character animation. One important application is to design a physially-based controller to track motion captured data, which is an effective way to increase the realism of the synthesized motions. Given a motion capture sequence $\vc{\bar{x}}$, we can linearize the dynamics equation at its vicinity:
+\begin{displaymath}
+  \Delta \vc{x}_{t+1}=\frac{\partial \vc{h}}{\partial \vc{x}}\Delta \vc{x}_{t}+\vc{B}_t\vc{u}_t
+  \end{displaymath}
+where $\Delta \vc{x}=\vc{x}-\vc{\bar{x}}$. This gives an LQ problem that seek a ``lazy'' (torque minimization) controller $\vc{u}_t=\vc{K}_t\Delta \vc{x}_t$ that minimizes the difference between the actual and the reference motion over the entire trajectory.
+
+More importantly, LQR is a building block to solve the more general trajectory optimization (\ref{eq:trajectoryOptimization}). Given an initial trajectory $\vc{x}_0, \vc{u}_0, \vc{x}_1, \vc{u}_1, ... , \vc{u}_N, \vc{x}_N$, we can perform the following steps iteratively:
+\begin{enumerate}
+\item{Compute the LQ approximation of the original problem (\ref{eq:trajectoryOptimization}) around the current trajectory by computing a first-order Taylor expansion of the dynamics, and a second-order expansion of the cost function.}
+\item{Use LQR to solve the optimal controller $\vc{u}$.}
+\item{Generate a new trajectory using controller $\vc{u}$.}
+  \item{Go to Step 1 until convergence.}
+\end{enumerate}
+This iterative-LQR process is the core idea behind differential dynamic programming (DDQ). We refer the interested reader to \cite{} for a more complete discussion about LQR and DDP. The key advantage of DDP is that it not only provides a single trajectory, but also an optimal feedback controller near that trajectory.
+
+To sum up, trajectory optimization is an effective way to synthesize character animation. The synthesized motion is not only physically correct, but more importantly, demonstrates an important animation principle, anticipation. This is because the objective of trajectory optimization is to minimize a long-term cost. Thus, the character can move intelligently that gives up short-term gain to minimize long-term cost. For example, for a high-jump task, the optimal controller could first lower the character's COM to achieve more height later. However, there are a few shortcomings of trajectory optimization. First, it often leads to a high dimensional optimization that is computational very expensive to solve. Another problem of high dimensional optimization is that the nonlinear solver is more likely to get stuck at bad local minima. Thus, good initialization is extremely important. Trajectory optimization utilizes the explicit form of dynamic equations to design the optimal controller. If the dynamic not smooth, too complicated or unknown, it is not clear how to apply the commonly-used trajectory optimization methods.
+
+
 \subsection{Reinforcement Learning}
 
 Reinforcement learning is motivated by the learning/training process of humans and animals. In a high level, reinforcement learning optimizes a controller by interacting with the physical environment with countless trials. If the controller produces a desired behavior to achieve a task, a reward is provided as the positive reinforcement. In contrast, if an undesired behavior is observed, no reward is offered. This reward system can gradually adapt the controller until eventually, optimal controllers for the task emerge. Reinforcement learning is an active research area, with numerous algorithms proposed every year. We refer readers to \cite{} for a thorough review. We will focus on policy search in remaining of this section. Policy search is a popular reinforcement learning algorithm in physically-based character animation. It performs extremely well in this field because it can tackle control problems with high-dimensional continuous state and action spaces, which is essential to control a human character. 
