@@ -1,5 +1,14 @@
 \section{Physical Simulation}
-In most of physically-based character animation systems, human characters are represented as an articulated rigid body system, a group of rigid bodies chained together through joints. Note that this is a drastic simplification since simulating each bone, muscle and tendon that a real human has would require a prohibitively huge amount of computational resources. The articulated figure is represented as a tree structure \ref{}. Each node is a rigid body and each edge is a joint. Each node can have multiple children but at most one parent. The root node has no parent. Note that in this tree representation, loop is not allowed. Although it is possible to simulate loops, such case is rare in character animation and will not discussed here. There are two major methods to simulate the dynamics of an articulated rigid body system. It can be simulated in maximal coordinates (Cartesian space) or in generalized coordinates (joint space).
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.6\textwidth]{figures/character}
+  \caption{Articulated figures in character animation to represent a human character (left) and a hand (right).}
+  \label{fig:character}
+\end{figure}
+
+
+In most of physically-based character animation systems, human characters are represented as an articulated rigid body system (Figure \ref{fig:character} left), a group of rigid bodies chained together through rotational joints. These joints can have different number of degrees of freedom (DOF). For example, the shoulder is a ball joint with three DOFs. The wrist is an universal joint (2 DOFs) and the elbow is a hinge joint (1 DOF). In some cases, if the character's motion involves dexterous hand manipulation, a more detailed hand model (Figure \ref{fig:character} right) is attached to the wrist. Note that this human model is a drastic simplification since simulating each bone, muscle and tendon that a real human has would require a prohibitively huge amount of computational resources. The articulated figure is represented as a tree structure. Each node is a rigid body and each edge is a joint. Each node can have multiple children but at most one parent. The root node has no parent. Note that in this tree representation, loop is not allowed. Although it is possible to simulate loops, such case is rare in character animation and will not discussed here. There are two major methods to simulate the dynamics of an articulated rigid body system. It can be simulated in maximal coordinates (Cartesian space) or in generalized coordinates (joint space).
 
 
 
@@ -68,8 +77,9 @@ In generalized coordinates, the physical states $\vc{q}$ of the articulated figu
 The dynamics equation in generalized coordinates for an articulated rigid body system is:
 \begin{equation}
   \vc{M}(\vc{q})\vc{\ddot{q}}+\vc{C(q,\dot{q})}=\vc{J}^T\vc{f}+\boldsymbol{\tau}
+  \label{eq:generalized}
 \end{equation}
-where $\vc{q}$, $\vc{\dot{q}}$ and $\vc{\ddot{q}}$ are the position, velocity and acceleration in generalized coordinates. $\vc{M}$ is the mass matrix. $\vc{C(q,\dot{q})}$ accounts for the Coriolis and centrifual force. $\vc{J}$ is the Jacobian matrix. $\vc{f}$ is the external force in Cartesian space, such as gravity and contact force. $\boldsymbol{\tau}$ is the generalized force, including the actuator torques. This equation is derived from Lagrangian dynamics. Detailed derivation can be found in Liu and Jain \cite{}.
+where $\vc{q}$, $\vc{\dot{q}}$ and $\vc{\ddot{q}}$ are the position, velocity and acceleration in generalized coordinates. $\vc{M}$ is the mass matrix. $\vc{C(q,\dot{q})}$ accounts for the Coriolis and centrifual force. $\vc{J}$ is the Jacobian matrix. $\vc{f}$ is the external force in Cartesian space, such as gravity and contact force. $\boldsymbol{\tau}$ is the generalized force, including the actuator torques. This equation is derived from Lagrangian dynamics. Detailed derivation can be found in Liu and Jain \cite{Liu:2012:STM}.
 
 When the articulated rigid bodies are simulated in generalized coordinates, it is often necessary to convert physical quantities back and forth between generalized and maximal coordinates. For example, we need to compute the velocity at certain point on the articulated figure in Cartesian space to collision detection. We also need to convert the forces from the Cartesian space to generalized coordinates to apply contact forces. The conversion is through the Jacobian matrix $\vc{J}$.
 \begin{equation}
@@ -82,7 +92,7 @@ Jacobian matrix bridges the two different coordinate system. It represents the r
     \boldsymbol{\tau} & = &\vc{J}^T\vc{f}
    \end{array}
 \end{displaymath}
-More conversion formulas can be found in Liu and Jain \cite{}.
+More conversion formulas can be found in Liu and Jain \cite{Liu:2012:STM}.
 
 Simulation in generalized coordinates is commonly used in physically-based character animation. Although it takes more effort to walk through the derivation, it has important advantages over simulation in maximal coordinates. Apparently, the representation is more compact. There is no redundancy and thus no need to use constraints to eliminate redundant states. More importantly, this compactness ensures that the joints are preserved exactly: the two bodies that are chained together cannot drift apart due to accumulation of numerical errors. This is because state of dislocated bodies are not representable in generalized coordinates.
 
@@ -107,13 +117,21 @@ Penalty method is trivial to implement. However, its effectiveness heavily depen
 
 \subsubsection{Linear Complementarity Problem}
 
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\textwidth]{figures/contact.jpg}
+  \caption{A linearized friction cone used in LCP formulation. Left: a foot is in contact with the ground. Right, the friction cone at the contact point. $\vc{n}$ is the contact normal, and $\vc{b}_i$ are a set of tangential bases.}
+  \label{fig:contactCone}
+\end{figure}
+
 Linear Complementarity Problem (LCP) is a more accurate and stable method to model contacts. The contact force $\vc{f}_c$ can be decomposed into the normal and the tangential (frictional) forces.
 \begin{displaymath}
 \vc{f}_c = f_\perp\vc{n}+\vc{B}\vc{f}_{\parallel}
 \end{displaymath}
 where $\vc{n}$ is the contact normal, $f_\perp$ and $\vc{f}_{\parallel}$ are the normal and tangential components respectively. $\vc{B}$ is a set of bases that span the tangential plane (Figure ~\ref{fig:contactCone}). The more basis $\vc{b}_i$ are used, the more accurate approximation of the friction cone is, but more computation is needed to solve the resulting LCP. 
 
-LCP imposes a set of constraints to satisfy these three conditions of Columb friction: 1) In the normal direction, only repulsive forces are exerted to stop penetration. 2) In the tangential direction, the friction direction is opposite to the motion. 3) In the tangential direction, the friction can be either static or sliding. I will illustrate the concept of LCP using the formulation in the normal direction. The formulation in the tangential direction is beyond the scope of this chapter but can be found in these tutorials \cite{}. 
+LCP imposes a set of constraints to satisfy these three conditions of Columb friction: 1) In the normal direction, only repulsive forces are exerted to stop penetration. 2) In the tangential direction, the friction direction is opposite to the motion. 3) In the tangential direction, the friction can be either static or sliding. I will illustrate the concept of LCP using the formulation in the normal direction. The formulation in the tangential direction is beyond the scope of this chapter but can be found in these tutorials \cite{Lloyd:2005,Tan:2012b}. 
 
 In a physical simulation, when two bodies collide, the relative velocity of the contact points can only be zero (resting) or positive (separating), but not negative (penetrating):
 \begin{equation}
@@ -133,9 +151,9 @@ v_\perp f_\perp =0
 \label{eq:complementarity}
 \end{equation}
 
-Combining the dynamics equations (eq. \ref{eq:dynamics} or ~\ref{}) and the LCP constraints (eq. \ref{eq:separating}, \ref{eq:repulsive}, \ref{eq:complementarity}) forms a mixed LCP problem, which can be solved efficiently by direct pivot-based methods \cite{} or iterative solvers \cite{}. 
+Combining the dynamics equations (eq. \ref{eq:dynamics} or ~\ref{eq:generalized}) and the LCP constraints (eq. \ref{eq:separating}, \ref{eq:repulsive}, \ref{eq:complementarity}) forms a mixed LCP problem, which can be solved efficiently by direct pivot-based methods \cite{Lloyd05} or iterative solvers \cite{Erleben:2007,Kaufman:2008,Otaduy:2009}. 
 
 
 \subsection{Simulation Software}
 
-There is a growing need for simulation software that can accurately simulate the complex dynamics of vitural humans and their interactions with their surrounding environment. A couple of open source physical simulators are readily available for research in physically-based character animation. The popular ones include Open Dynamic Engine (ODE) \cite{}, Bullet \cite{}, Dynamic Animation and Robotics Toolkit (DART) \cite{} and MuJoCo \cite{}. All them can simulate articulated rigid body systems with LCP-based contact model in real time. These simulators allow the user to specify the structure of the articulated figure, the shape and the physical properties of each body, the type of joints, and other parameters describing the environment. Different simulators may offer different features, speed and accuracy. An in-depth comparison is beyond the scope of this Chapter. Erez et al.\cite{} provides an up-to-date review and comparison among these modern physical engines.
+There is a growing need for simulation software that can accurately simulate the complex dynamics of vitural humans and their interactions with their surrounding environment. A couple of open source physical simulators are readily available for research in physically-based character animation. The popular ones include Open Dynamic Engine (ODE) \cite{ode:2008}, Bullet \cite{bullet}, Dynamic Animation and Robotics Toolkit (DART) \cite{dart:2012} and MuJoCo \cite{mujoco}. All them can simulate articulated rigid body systems with LCP-based contact model in real time. These simulators allow the user to specify the structure of the articulated figure, the shape and the physical properties of each body, the type of joints, and other parameters describing the environment. Different simulators may offer different features, speed and accuracy. An in-depth comparison is beyond the scope of this Chapter. Erez et al.\cite{ErezTT15} provides an up-to-date review and comparison among these modern physical engines.

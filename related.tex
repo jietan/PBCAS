@@ -1,5 +1,13 @@
 \section{State of the art}
-Starting from the seminal work of Hodgins et al. \cite{}, controlling a physically simulated human character has been extensively studied in computer animation. A wide variety of human activities, including walking \cite{}, running \cite{}, swimming \cite{yang2004layered,kwatra2009fluid,Si:2014}, biking \cite{Hodgins:1995:AHA}, gymnastic motions \cite{}, reacting to perturbations \cite, getting up from falling \cite{} and manipulating objects with hands \cite{} are realistically synthesized in physically simulated environments. 
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{figures/teaser2.jpg}
+  \caption{Variety of human activities, such as running, swimming, dressing, performing bicycle stunts, interacting with the environment and manipulating clothes, are simulated in a physically-simulated environment. Image courtesy \cite{Hodgins:1995:AHA,Si:2014,Clegg:2015,Tan:2014,Coros2010,Bai:2014}}
+  \label{fig:teaser}
+\end{figure}
+
+Starting from the seminal work of Hodgins et al. \cite{Hodgins:1995:AHA}, controlling a physically simulated human character has been extensively studied in computer animation. A wide variety of human activities, including walking \cite{Yin:2007}, running \cite{Kwon:2010}, swimming \cite{kwatra2009fluid,Si:2014}, biking \cite{Tan:2014}, dressing \cite{Clegg:2015}, gymnastic motions \cite{Hodgins:1995:AHA}, reacting to perturbations \cite{Wang:2010}, falling and landing \cite{HA:2012:FLM} and manipulating objects with hands \cite{Liu:2009:DMF,Ye:2012,Bai:2014} are realistically synthesized in physically simulated environments (Figure \ref{fig:teaser}). 
 
 Two main categories of methods to synthesize human motions are trajectory optimization and reinforcement learning. Trajectory optimization optimizes a motion trajectory by minimizing a task-related objective subject to physical constraints. It has been applied to control the iconic jumping Luxo Jr lamp \cite{Witkin:1988}, humanoid characters \cite{Liu:2002,Jain:2009,Ye:2010}, and characters with arbitrary morphologies \cite{Wampler:2009}. The resulting motions are physically plausible and follow the animation principles such as anticipation and follow-through \cite{thomas:1995}.  Reinforcement learning algorithms solve a Markov Decision Process (MDP) to find optimal actions at different states. If the transition model is known, (fitted) value iteration has been successfully applied to generalize motion capture data \cite{Treuille:2007:NCA,Levine:2012:CCC}, to carry out locomotion tasks \cite{Coros:2009:RTC}, and to manipulate objects with hands \cite{Multifinger2013}. Policy search \cite{Ng:2000:PPS} is another reinforcement learning algorithm that can directly searches for a control policy without the need to construct a value function. Many studies on locomotion control \cite{Yin08,Wang:2009,Coros:2011,Wang:2012,Geijtenbeek:2013} performed policy search on parameterized controllers. 
 
@@ -12,11 +20,11 @@ subject to equations of motion. This assumption significantly
 restricts the effectiveness of the controller for locomotion and balance
 because the controller is not allowed to actively exploit contact
 breakage, slipping contacts, or rolling contacts to achieve control
-goals. Three promising research directions to tackle this challenge are contact-invariant optimization \cite{Mordatch:2012,Mordatch:2013}, solving QPCC \cite{} and policy search with stochastic optimization \cite{Wu:2010:TAB,Wang:2010,Mordatch:2010:RPL}.
+goals. Three promising research directions to tackle this challenge are contact-invariant optimization \cite{Mordatch:2012,Mordatch:2013}, solving QPCC \cite{Tan:2012} and policy search with stochastic optimization \cite{Wu:2010:TAB,Wang:2010,Mordatch:2010:RPL}.
 
 An important criteria in physically-based character animation is the realism of the synthesized motions. Even today, the quality of motions synthesized in physically-based character animation is still far from natural. This has prevent it from be used for many applications. One possible cause of the unnatural motion is the vast simplification by representing the human character as an articulated rigid body system. To improve the realism, prior work has simulated the dynamics of muscles and demonstrated complex interplay among bones, muscles, ligaments and other soft tissues can be modeled for individual body parts, including
-the neck \cite{Lee:2006}, the upper body \cite{Zordan:2006,Dilorenzo:2008,Lee:2009:CBM}, lower body \cite{}, and hands
-\cite{Tsang:2005,Sueda:2008}. However, constructing such a sophisticated biological model for a full human character is still computational prohibitive. An alternative solution is to augment a physically controlled character with realstic motion capture streams \cite{}. 
+the neck \cite{Lee:2006}, the upper body \cite{Zordan:2006,Dilorenzo:2008,Lee:2009:CBM}, lower body \cite{Wang:2012}, and hands
+\cite{Tsang:2005,Sueda:2008}. However, constructing such a sophisticated biological model for a full human character is still computational prohibitive. An alternative solution is to augment a physically controlled character with realstic motion capture streams \cite{daSilva:2008,Muico:2009:CAN,Liu:2010}. 
 
 
 
