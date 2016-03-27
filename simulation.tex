@@ -1,5 +1,7 @@
 \section{Physical Simulation}
 
+Physically-based character animation consists of two parts, simulation and control. This section concentrates on the simulation part while the next section on control. Although the majority of research in physically-based character animation focuses on control, a good understanding of physical simulation is essential for designing effective controllers because complex human behaviors often require sophisticated controllers that exploit the dynamics of a multibody system.
+
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.6\textwidth]{figures/character}
@@ -7,12 +9,11 @@
   \label{fig:character}
 \end{figure}
 
-
-In most of physically-based character animation systems, human characters are represented as an articulated rigid body system (Figure \ref{fig:character} left), a group of rigid bodies chained together through rotational joints. These joints can have different number of degrees of freedom (DOF). For example, the shoulder is a ball joint with three DOFs. The wrist is an universal joint (2 DOFs) and the elbow is a hinge joint (1 DOF). In some cases, if the character's motion involves dexterous hand manipulation, a more detailed hand model (Figure \ref{fig:character} right) is attached to the wrist. Note that this human model is a drastic simplification since simulating each bone, muscle and tendon that a real human has would require a prohibitively huge amount of computational resources. The articulated figure is represented as a tree structure. Each node is a rigid body and each edge is a joint. Each node can have multiple children but at most one parent. The root node has no parent. Note that in this tree representation, loop is not allowed. Although it is possible to simulate loops, such case is rare in character animation and will not discussed here. There are two major methods to simulate the dynamics of an articulated rigid body system. It can be simulated in maximal coordinates (Cartesian space) or in generalized coordinates (joint space).
-
+In physically-based character animation, a human character is often represented as an articulated rigid body system (Figure \ref{fig:character} left), a group of rigid bodies chained together through rotational joints. These joints can have different number of degrees of freedom (DOF). For example, the shoulder is a ball joint (3 DOFs), the wrist is a universal joint (2 DOFs) and the elbow is a hinge joint (1 DOF). In some cases, if the character's motion involves dexterous hand manipulation, a detailed hand model (Figure \ref{fig:character} right) is attached to each wrist. Note that this human model is a dramatic simplification since simulating each bone, muscle and tendon that a real human has would require a prohibitively huge amount of computational resources. In the simulation, the articulated figure is represented as a tree structure. A node is a rigid body and each edge is a joint. Each node can have multiple children but at most one parent. The root node has no parent. Any body can be selected as the root node, but a common practice is to use the torso as the root. In this tree representation, loops are not allowed. Although it is possible to simulate loops, such case is rare in character animation and will not discussed here. There are two major methods to simulate the dynamics of an articulated rigid body system. It can be simulated in maximal coordinates (Cartesian space) or in generalized coordinates (joint space).
 
 
-\subsection{Simulation in maximal coordinates}
+
+\subsection{Simulation in Maximal Coordinates}
 
 In maximal coordinates, the physical states of the articulated figures are defined for each node (rigid body). Each body has six degrees of freedom: three translational and three rotational. The dynamics of each rigid body is considered independently. A list of additional joint constraints are imposed to ensure that the two adjacent bodies will stick together at the joint location. The dynamics equation for each body is 
 
@@ -30,17 +31,17 @@ m\vc{g} \\
 -\dot{\vc{I}}\vc{\omega}
 \end{array}\right]
 +\left[\begin{array}{c}
-\vc{I}_{3\times3}\\
-\vc{[r]}_\times
+\vc{f}\\
+\boldsymbol{\tau}
 \end{array}\right]
-\vc{f}+
++
 \left[\begin{array}{c}
 \vc{0}\\
-\boldsymbol{\tau}_c+\boldsymbol{\tau}
+\boldsymbol{\tau}_a
 \end{array}\right]
 \label{eq:dynamics}
 \end{equation}
-where $m$ and $\vc{I}$ are the mass and the inertia tensor of the body. $\vc{I}_{3\times 3}$ is a $3\times 3$ identity matrix. $\vc{v}$ and $\vc{\omega}$ are the linear and angular velocities. $\vc{f}$ consists of joint constraint forces and contact forces. $\vc{r}$ is the vector from the center of mass to the point that $\vc{f}$ acts upon. $[\vc{r}]_{\times}$ is the skew symmetric matrix that maps $\vc{f}$ to its corresponding torque. $\boldsymbol{\tau}_c$ is the joint constraint torque while $\boldsymbol{\tau}$ is the torque exerted by the actuators.
+where $m$ and $\vc{I}$ are the mass and the inertia tensor of the body. $\vc{I}_{3\times 3}$ is a $3\times 3$ identity matrix. $\vc{v}$ and $\vc{\omega}$ are the linear and angular velocities. $[\vc{f}, \boldsymbol{\tau}]^T$ are the passive forces and torques from joint constraints, contacts, gravity and other external sources. $\boldsymbol{\tau}_a$ are the torques actively exerted by the controllers, which is the focus of Section 4.
 
 Joints that connect two rigid bodies constrain their relative motions. Different number of constraints are imposed according to the type of joints. For example, a fix joint has six constraints, which entirely eliminate the relative motion between two two adjacent bodies. A hinge joint has five constraints that eliminate all but the rotation along the joint axis. A ball joint has three, which only constrains the relative translation at the joint location. 
 
@@ -71,7 +72,7 @@ where $\boldsymbol{\tau}_A$ and $\boldsymbol{\tau}_B$ are the torques exerted by
 
 Although simple to understand and implement, simulating characters in maximal coordinates is not the most popular method due to a few drawbacks. First, the state representation in  maximal coordinates is redundant. It is not efficient to use all six degrees of freedom a rigid body and then eliminate most of them using joint constraints. Second, the accumulating numerical errors in simulation would cause the joint constraints not satisfied exactly. Eventually, joints will dislocate and adjacent bodies will drift apart. Both of these shorting comings are overcome by simulation in generalized coordinates.
 
-\subsection{Simulation in generalized coordinates}
+\subsection{Simulation in Generalized Coordinates}
 In generalized coordinates, the physical states $\vc{q}$ of the articulated figure are defined on the edges of the tree (joints). The root node is attached to the world space via a 6-dof free joint. It can translate and rotate freely. Other nodes can be attached to their parents through a 3-dof ball joint, 2-dof universal joint, 1-dof hinge joint or 0-dof fix joint. Each degree of freedom contributes one component of $\vc{q}$. The number of DOF's equals the dimensionality of $\vc{q}$. In other words, there is no redundancy in this representation.
 
 The dynamics equation in generalized coordinates for an articulated rigid body system is:
@@ -96,11 +97,11 @@ More conversion formulas can be found in Liu and Jain \cite{Liu:2012:STM}.
 
 Simulation in generalized coordinates is commonly used in physically-based character animation. Although it takes more effort to walk through the derivation, it has important advantages over simulation in maximal coordinates. Apparently, the representation is more compact. There is no redundancy and thus no need to use constraints to eliminate redundant states. More importantly, this compactness ensures that the joints are preserved exactly: the two bodies that are chained together cannot drift apart due to accumulation of numerical errors. This is because state of dislocated bodies are not representable in generalized coordinates.
 
-\subsection{Contact modeling}
+\subsection{Contact Modeling}
 
 Most tasks modeled in physically-based character animation, such as locomotion and hand manipulation, rely on accurately simulating the contacts between the human character and its physical environment. Penalty force and Linear Complementarity Problem (LCP) are two widely used methods in contact modeling.
 
-\subsubsection{Penalty method}
+\subsubsection{Penalty Method}
 When a body $A$ penetrates another body $B$, a repulsive penalty force is $\vc{f}_c$ is exerted to separate these two bodies.
 \begin{equation}
 \vc{f}_c=
@@ -156,4 +157,4 @@ Combining the dynamics equations (eq. \ref{eq:dynamics} or ~\ref{eq:generalized}
 
 \subsection{Simulation Software}
 
-There is a growing need for simulation software that can accurately simulate the complex dynamics of vitural humans and their interactions with their surrounding environment. A couple of open source physical simulators are readily available for research in physically-based character animation. The popular ones include Open Dynamic Engine (ODE) \cite{ode:2008}, Bullet \cite{bullet}, Dynamic Animation and Robotics Toolkit (DART) \cite{dart:2012} and MuJoCo \cite{mujoco}. All them can simulate articulated rigid body systems with LCP-based contact model in real time. These simulators allow the user to specify the structure of the articulated figure, the shape and the physical properties of each body, the type of joints, and other parameters describing the environment. Different simulators may offer different features, speed and accuracy. An in-depth comparison is beyond the scope of this Chapter. Erez et al.\cite{ErezTT15} provides an up-to-date review and comparison among these modern physical engines.
+There is a growing need for simulation software that can accurately simulate the complex dynamics of vitural humans and their interactions with their surrounding environment. A couple of open source physical simulators are readily available for research in physically-based character animation. The popular ones include Open Dynamic Engine (ODE) \footnote{http://www.ode.org/}, Bullet \footnote{http://www.bulletphysics.org/}, Dynamic Animation and Robotics Toolkit (DART) \footnote{http://dartsim.github.io/} and MuJoCo \footnote{http://www.mujoco.org}. All them can simulate articulated rigid body systems with LCP-based contact model in real time. These simulators allow the user to specify the structure of the articulated figure, the shape and the physical properties of each body, the type of joints, and other parameters describing the environment. Different simulators may offer different features, speed and accuracy. An in-depth comparison is beyond the scope of this Chapter. Erez et al.\cite{ErezTT15} provides an up-to-date review and comparison among these modern physical engines.
