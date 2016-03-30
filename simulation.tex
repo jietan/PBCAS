@@ -9,7 +9,7 @@ Physically-based character animation consists of two parts, simulation\index{sim
   \label{fig:character}
 \end{figure}
 
-In physically-based character animation, a human character is often represented as an articulated rigid body system\index{articulated rigid bodies} (Figure \ref{fig:character} left), a group of rigid bodies chained together through rotational joints\index{joint}. These joints can have different number of degrees of freedom (DOF)\index{DOF}. For example, the shoulder is a ball joint (3 DOFs), the wrist is a universal joint (2 DOFs) and the elbow is a hinge joint (1 DOF). In some cases, if the character's motion involves dexterous hand manipulation, a detailed hand model (Figure \ref{fig:character} right) is attached to each wrist. Note that this human model is a dramatic simplification since simulating each bone, muscle and tendon that a real human has would require a prohibitively huge amount of computational resources. In the simulation, the articulated figure is represented as a tree structure. A node is a rigid body and each edge is a joint. Each node can have multiple children but at most one parent. The root node has no parent. Any body can be selected as the root node, but a common practice is to use the torso as the root. In this tree representation, loops are not allowed. Although it is possible to simulate loops, such case is rare in character animation and will not be discussed here. There are two major methods to simulate the dynamics of an articulated rigid body system. It can be simulated in maximal coordinates\index{maximal coordinate} (Cartesian space)\index{Cartesian space} or in generalized coordinates\index{generalized coordinate} (joint space)\index{joint space}.
+In physically-based character animation, a human character is often represented as an articulated rigid body system\index{articulated rigid bodies} (Figure \ref{fig:character} left), a group of rigid bodies chained together through rotational joints\index{joint}. These joints can have different number of degrees of freedom (DOF)\index{DOF}. For example, the shoulder is a ball joint (3 DOFs), the wrist is a universal joint (2 DOFs) and the elbow is a hinge joint (1 DOF). In some cases, if the character's motion involves dexterous hand manipulation, a detailed hand model (Figure \ref{fig:character} right) is attached to each wrist. Note that the articulated rigid body system is a dramatic but necessary simplification since simulating each bone, muscle and tendon that a real human has would require a prohibitively huge amount of computational resources. In the simulation, the articulated figure is represented as a tree structure. Each node is a rigid body and each edge is a joint. One node can have multiple children but at most one parent. The root node has no parent. While any body can be selected as the root node, a common choice is to use the torso as the root. In this tree structure, loops are not allowed. Although it is possible to simulate loops, such case is rare in character animation and will not be discussed here. There are two major methods to simulate the dynamics of an articulated rigid body system: simulation in maximal coordinates\index{maximal coordinate} (Cartesian space)\index{Cartesian space} and simulation in generalized coordinates\index{generalized coordinate} (joint space)\index{joint space}.
 
 
 
@@ -50,7 +50,7 @@ Suppose a joint connects body $A$ and body $B$, the translational constraints ar
 \begin{displaymath}
 \left[\begin{array}{c}
 \vc{I}_{3\times 3}\\
-\vc{[r]}_{A\times}
+-\vc{[r]}_{A\times}
 \end{array}\right]
 \left[\begin{array}{c}
 \vc{v}_A \\
@@ -58,7 +58,7 @@ Suppose a joint connects body $A$ and body $B$, the translational constraints ar
 \end{array}\right]-
 \left[\begin{array}{c}
 \vc{I}_{3\times 3}\\
-\vc{[r]}_{B\times}
+-\vc{[r]}_{B\times}
 \end{array}\right]
 \left[\begin{array}{c}
 \vc{v}_B \\
@@ -66,7 +66,7 @@ Suppose a joint connects body $A$ and body $B$, the translational constraints ar
 \end{array}\right]
 =\vc{0}
 \end{displaymath}
-where $[\vc{r}]_\times$ is the skew symmetric matrix of $\vc{r}$, which is the vector from the COM of the body to the joint location. The rotational constraints are:
+where $[\vc{r}]_\times$ is the skew symmetric matrix of $\vc{r}$, which is the vector from the center of mass (COM) of the body to the joint location. The rotational constraints are:
 \begin{displaymath}
 \vc{d}_i^T(\vc{\omega}_A-\vc{\omega}_B)=0
   \end{displaymath}
@@ -79,18 +79,18 @@ To allow a character to actively control its motion, actuators are attached to t
 \end{displaymath}
 where $\boldsymbol{\tau}_A$ and $\boldsymbol{\tau}_B$ are the torques exerted by the actuator to body $A$ and $B$ respectively.
 
-Although simple to understand and implement, simulating characters in maximal coordinates has a few drawbacks. First, the state representation is redundant. It is not efficient to use all six degrees of freedom a rigid body and then eliminate most of them with joint constraints. Second, the accumulating numerical errors in simulation would cause the joint constraints not satisfied exactly. Eventually, joints will dislocate and adjacent bodies can drift apart. Both of these shortcomings can be overcome by simulation in generalized coordinates.
+Although simple to understand and implement, simulating characters in maximal coordinates has a few drawbacks. First, the state representation is redundant. It is not efficient to use all six DOFs of a rigid body and then eliminate most of them with joint constraints. Second, the accumulating numerical errors in simulation would cause the joint constraints not satisfied exactly. Eventually, joints will dislocate and adjacent bodies can drift apart. Both of these shortcomings can be overcome by simulation in generalized coordinates.
 
 \subsection{Simulation in Generalized Coordinates}
 \index{generalized coordinate}
-In generalized coordinates, the physical states $\vc{q}, \vc{\dot{q}}$ of the articulated figure are defined on the edges of the tree (joints). Note that the root node is attached to the world space via a 6-DOF joint that can translate and rotate freely. Each DOF is one component of $\vc{q}$. The number of DOFs equals the dimensionality of $\vc{q}$. In other words, there is no redundancy in this representation.
+In generalized coordinates, the physical states $\vc{q}, \vc{\dot{q}}$ of the articulated figure are defined on the edges of the tree (joint angles). Note that the root node is attached to the world space via a 6-DOF joint that can translate and rotate freely. Each DOF is one component of $\vc{q}$. The number of DOFs equals the dimensionality of $\vc{q}$. In other words, there is no redundancy in this representation.
 
 The dynamics equation \index{dynamics equation}in generalized coordinates for an articulated rigid body system is:
 \begin{equation}
-  \vc{M}(\vc{q})\vc{\ddot{q}}+\vc{C(q,\dot{q})}=\boldsymbol{\tau}+\boldsymbol{\tau}^a
+  \vc{M}(\vc{q})\vc{\ddot{q}}+\vc{C(q,\dot{q})}=\vc{Q}+\boldsymbol{\tau}^a
   \label{eq:generalized}
 \end{equation}
-where $\vc{q}$, $\vc{\dot{q}}$ and $\vc{\ddot{q}}$ are the position, velocity and acceleration in generalized coordinates. $\vc{M(q)}$ is the mass matrix\index{mass matrix}. $\vc{C(q,\dot{q})}$ accounts for the Coriolis and centrifual force. $\boldsymbol{\tau}$ is the external generalized force\footnote{Due to convention, the same symbol $\boldsymbol{\tau}$ is used to represent torque in maximal coordinates and generalized force in generalized coordinate. However, in most of cases, they are two different quantities.}, including gravity and contact force. $\boldsymbol{\tau}^a$ is the generalized force exerted by the controller\index{controller} (Section 4). This equation can be derived from Lagrangian dynamics. Detailed derivation is omitted here but can be found in \citet{Liu:2012:STM}.
+where $\vc{q}$, $\vc{\dot{q}}$ and $\vc{\ddot{q}}$ are the position, velocity and acceleration in generalized coordinates. $\vc{M(q)}$ is the mass matrix\index{mass matrix}. $\vc{C(q,\dot{q})}$ accounts for the Coriolis and centrifual force. $\vc{Q}$ is the external generalized force, including gravity and contact force. $\boldsymbol{\tau}^a$ is the generalized force exerted by the controller\index{controller} (Section 4). This equation can be derived from Lagrangian dynamics. Detailed derivation is omitted here but can be found in \citet{Liu:2012:STM}.
 
 When the articulated rigid bodies are simulated in generalized coordinates, it is often necessary to convert physical quantities back and forth between generalized and maximal coordinates. For example, we need to compute the velocity at certain point on the articulated figure in Cartesian space for collision detection. We also need to convert the forces from the Cartesian space to generalized coordinates to apply contact forces. Jacobian matrix $\vc{J}$  bridges these two different coordinate systems.  
 \begin{equation}
@@ -100,7 +100,7 @@ It represents the relation how much a point $\vc{x}$ moves in the Cartesian spac
 \begin{displaymath}
   \begin{array}{lll}
     \vc{v} & = & \vc{J}\vc{\dot{q}}\\
-    \boldsymbol{\tau} & = &\vc{J}^T\vc{f}
+    \vc{Q} & = &\vc{J}^T\vc{f}
    \end{array}
 \end{displaymath}
 
@@ -143,7 +143,7 @@ Linear Complementarity Problem (LCP)\index{LCP} is a more accurate and stable me
 \end{displaymath}
 where $\vc{n}$ is the contact normal, $f_\perp$ and $\vc{f}_{\parallel}$ are the normal and tangential components respectively. $\vc{B}$ is a set of bases that span the tangential plane (Figure ~\ref{fig:contactCone}). The more basis $\vc{b}_i$ are used, the more accurate approximation of the friction cone is, but more computation is needed to solve the resulting LCP. 
 
-LCP imposes a set of constraints to satisfy the conditions of Coulomb friction: 1) In the normal direction, only repulsive forces are exerted to stop penetration. 2) In the static contact situation, the contact force lies within the friction cone. 3) In sliding contact situation, the contact force lies at the boundary of the friction cone and the friction direction is opposite to the sliding direction. I will illustrate the concept of LCP using the formulation in the normal direction. The formulation in the tangential directions is beyond the scope of this chapter. It can be found in the following tutorials \cite{Lloyd:2005,Tan:2012b}. 
+LCP imposes a set of constraints to satisfy the conditions of Coulomb friction: 1) In the normal direction, only repulsive forces are exerted to stop penetration. 2) In a static contact situation, the contact force lies within the friction cone. 3) In a sliding contact situation, the contact force lies at the boundary of the friction cone and the friction direction is opposite to the sliding direction. I will illustrate the concept of LCP using the formulation in the normal direction. The formulation in the tangential directions is beyond the scope of this chapter. It can be found in the following tutorials \cite{Lloyd:2005,Tan:2012b}. 
 
 In a physical simulation, after the collisions are resolved, the relative velocity between the contact points of two colliding bodies can only be either zero (resting) or positive (separating), but not negative (penetrating):
 \begin{equation}
@@ -162,9 +162,9 @@ v_\perp f_\perp =0
 \label{eq:complementarity}
 \end{equation}
 
-Combining the dynamics equations (eq. \ref{eq:dynamics} or ~\ref{eq:generalized}) and the LCP constraints (eq. \ref{eq:separating}, \ref{eq:repulsive}, \ref{eq:complementarity}) forms a mixed LCP problem. It be solved efficiently by direct \cite{Lloyd05} or iterative solvers \cite{Erleben:2007,Kaufman:2008,Otaduy:2009}. 
+Combining the dynamics equations (eq. \ref{eq:dynamics} or ~\ref{eq:generalized}) and the LCP constraints (eq. \ref{eq:separating}, \ref{eq:repulsive}, \ref{eq:complementarity}) forms a mixed LCP problem. It can be solved efficiently by direct \cite{Lloyd:2005} or iterative solvers \cite{Erleben:2007,Kaufman:2008,Otaduy:2009}. 
 
 
 \subsection{Simulation Software}
 
-There is a growing need for simulation software that can accurately simulate the complex dynamics of virtural humans and their interactions with their surrounding environment. A couple of open source physical simulators are readily available for research in physically-based character animation. The popular ones include Open Dynamic Engine (ODE) \footnote{http://www.ode.org/}, Bullet \footnote{http://www.bulletphysics.org/}, Dynamic Animation and Robotics Toolkit (DART) \footnote{http://dartsim.github.io/} and MuJoCo \footnote{http://www.mujoco.org}. All of them can simulate articulated rigid bodies\index{articulated rigid bodies} with an LCP-based\index{LCP} contact\index{contact} model in real time. These simulators allow the user to specify the structure of the articulated figure, the shape and the physical properties of each body, the type of joints, and other parameters describing the environment. Different simulators may offer different features, speed and accuracy. \citet{ErezTT15} provide an up-to-date review and an in-depth comparison among these modern physical engines.
+There is a growing need for simulation software that can accurately simulate the complex dynamics of virtural humans and their interactions with their surrounding environment. A number of open source physical simulators are readily available for research in physically-based character animation. The popular ones include Open Dynamic Engine (ODE) \footnote{http://www.ode.org/}, Bullet \footnote{http://www.bulletphysics.org/}, Dynamic Animation and Robotics Toolkit (DART) \footnote{http://dartsim.github.io/} and MuJoCo \footnote{http://www.mujoco.org}. All of them can simulate articulated rigid bodies\index{articulated rigid bodies} with an LCP-based\index{LCP} contact\index{contact} model in real time. These simulators allow the user to specify the structure of the articulated figure, the shape and the physical properties of each body, the type of joints, and other parameters describing the environment. Different simulators may offer different features, speed and accuracy. \citet{ErezTT15} provided an up-to-date review and an in-depth comparison among these modern physical engines.
